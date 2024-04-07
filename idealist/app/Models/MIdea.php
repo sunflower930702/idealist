@@ -12,7 +12,11 @@ class MIdea extends Model
 
     protected $table = "mIdea";
 
-    public function getDetail($id, $deep = 1) {
+    public function getDetail($id, $deep = 1, $onlyOwn = false) {
+
+        $detailModel = new MIdeaDetail();
+        $propertyModel = new MIdeaProperty();
+        $methodModel = new MIdeaMethod();
 
         $result = [];
 
@@ -25,39 +29,48 @@ class MIdea extends Model
             return null;
         }
 
+        // 対象が継承しているデータを取得
+        $result['parent'] = $this->getParent($result['target']->extendsId, $onlyOwn);
+
+        // 対象を継承しているデータを取得
+        $result['child'] = $this->getChild($id, $deep);
+
         // 対象の保有するプロパティを取得
-        $query = DB::table('mIdeaProperty AS mIP');
-        $query->select([
-            'mI.name AS name',
-            'mIP.value AS value'
-        ]);
-        $query->leftJoin('mIdea AS mI', function($join) {
-            $join->on('mIP.propetyId', 'mI.id');
-        });
-        $query->where('mIP.mIdeaId', $id);
-        $result['properties'] = $query->get()->toArray();
+        $result['properties'] = $propertyModel->getDetail($id);
+        if ($onlyOwn == false) {
+
+            $targetParent = $result['parent'];
+            while($targetParent != null && $targetParent["info"] != null) {
+
+                $tmpProperies = $propertyModel->getDetail($targetParent["info"]->id);
+                foreach ($tmpProperies as $item) {
+                    $result['properties'][] = $item;
+                }
+
+                $targetParent = $targetParent["parent"];
+            }
+        }
 
         // 対象の保有するメソッド取得
-        $query = DB::table('mIdeaMethod AS mIM');
-        $query->select([
-            'mM.name AS name'
-        ]);
-        $query->leftJoin('mMethod AS mM', function($join) {
-            $join->on('mIM.methodId', 'mM.id');
-        });
-        $query->where('mIM.mIdeaId', $id);
-        $result['methods'] = $query->get()->toArray();
+        $result['methods'] = $methodModel->getDetail($id);
+        if ($onlyOwn == false) {
+
+            $targetParent = $result['parent'];
+            while($targetParent != null && $targetParent["info"] != null) {
+
+                $tmpMethods = $methodModel->getDetail($targetParent["info"]->id);
+                foreach ($tmpMethods as $item) {
+                    $result['methods'][] = $item;
+                }
+
+                $targetParent = $targetParent["parent"];
+            }
+        }
 
         // 対象の具体例（詳細）を取得
         $query = DB::table('mIdeaDetail');
         $query->where('mIdeaId', $id);
         $result['details'] = $query->get()->toArray();
-
-        // 対象が継承しているデータを取得
-        $result['parent'] = $this->getParent($result['target']->extendsId);
-
-        // 対象を継承しているデータを取得
-        $result['child'] = $this->getChild($id, $deep);
 
         return $result;
     }
@@ -166,5 +179,118 @@ class MIdea extends Model
 
         $query->limit(100000);
         return $query->get()->toArray();
+    }
+
+    public function ins($dataSet) {
+
+        $detailModel = new MIdeaDetail();
+        $propertyModel = new MIdeaProperty();
+        $methodModel = new MIdeaMethod();
+
+        DB::beginTransaction();
+
+        try {
+
+            $id = $this->getNextId();
+
+            $query = DB::table($this->table);
+            $query->insert([
+                'id' => $id,
+                'extendsId' => $dataSet["extendsId"],
+                'name' => $dataSet["name"],
+                'contents' => $dataSet["contents"],
+                'created_at' => now(),
+                'updated_at' => now()
+            ]);
+
+            $detailModel->ins($id, $dataSet["detail"]);
+            $propertyModel->ins($id, $dataSet["property"]);
+            $methodModel->ins($id, $dataSet["method"]);
+        } catch (Exception $e) {
+            
+            DB::rollBack();
+            return false;
+        }
+
+        DB::commit();
+        return true;
+    }
+
+    public function upd($dataSet) {
+
+        $detailModel = new MIdeaDetail();
+        $propertyModel = new MIdeaProperty();
+        $methodModel = new MIdeaMethod();
+
+        DB::beginTransaction();
+
+        try {
+
+            $query = DB::table($this->table);
+            $query->where("id", $dataSet["id"]);
+            $query->update([
+                'name' => $dataSet["name"],
+                'extendsId' => $dataSet["extendsId"],
+                'contents' => $dataSet["contents"],
+                'updated_at' => now()
+            ]);
+
+            $detailModel->ins( $dataSet["id"], $dataSet["detail"]);
+            $propertyModel->ins($dataSet["id"], $dataSet["property"]);
+            $methodModel->ins($dataSet["id"], $dataSet["method"]);
+        } catch (Exception $e) {
+            
+            DB::rollBack();
+            return false;
+        }
+
+        DB::commit();
+        return true;
+    }
+
+    /**
+     * 参照の循環が発生するかをチェックする
+     *  => $idの子供に$extendsIdがいてはいけない
+     *     再帰処理で$idを少しずつ下げて探索を行う
+     * 
+     */
+    public function checkLoop($id, $extendsId) {
+
+        // 自分を継承しているもの
+        $query = DB::table($this->table);
+        $query->where('id', $extendsId);
+        $query->where('extendsId', $id);
+        $result = $query->get()->toArray();
+
+        if (count($result) > 0) {
+            return false;
+        }
+
+        // 子を見に行く
+        $query = DB::table($this->table);
+        $query->where('extendsId', $id);
+        $result = $query->get()->toArray();
+        foreach ($result as $item) {
+            if ($this->checkLoop($item->id, $extendsId) == false) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    // ==============================================
+    // Privateメソッド
+    // ==============================================
+
+    /**
+     * 次のIDを取得する
+     *  -> 最大値+1
+     * 
+     */
+    private function getNextId() {
+
+        $query = DB::table($this->table);
+        return $query->max('id') + 1;
     }
 }

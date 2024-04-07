@@ -5,7 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Http\Request;
 use App\Models\MIdea;
 use App\Models\MIdeaMethod;
-use App\Models\MIdeaPropety;
+use App\Models\MIdeaProperty;
 use App\Models\mMethod;
 
 class IdeaContoller extends Controller
@@ -30,13 +30,14 @@ class IdeaContoller extends Controller
 
         $id = $json["query"]["id"];
         $deep = $json["query"]["deep"];
+        $onlyOwn = $json["query"]["onlyOwn"];
 
         if ($deep == null) {
             $deep = 1;
         }
 
         $ideaModel = new MIdea();
-        $modelResult = $ideaModel->getDetail($id, $deep);
+        $modelResult = $ideaModel->getDetail($id, $deep, $onlyOwn );
 
         return response()->json(['dataSet' => $modelResult]);
     }
@@ -59,5 +60,32 @@ class IdeaContoller extends Controller
         $modelResult = $ideaModel->getList($cond);
 
         return response()->json(['idea' => $modelResult]);
+    }
+    
+    /**
+     * 更新API
+     */
+    public function update(Request $request) {
+
+        $json = json_decode($request->getContent(), true);
+        $dataSet = $json["dataSet"];
+
+        $ideaModel = new MIdea();
+        if ($dataSet["id"] == 0) {
+            $modelResult = $ideaModel->ins($dataSet);
+        } else {
+
+            if ($dataSet["id"] == $dataSet["extendsId"]) {
+                return response()->json(['result' => false, 'msg' => "継承元に同じものは選択できません。"]);
+            }
+
+            if ($ideaModel->checkLoop($dataSet["id"], $dataSet["extendsId"]) == false) {
+                return response()->json(['result' => false, 'msg' => "循環が発生します。"]);
+            }
+
+            $modelResult = $ideaModel->upd($dataSet);
+        }
+
+        return response()->json(['result' => $modelResult, 'msg' => ""]);
     }
 }

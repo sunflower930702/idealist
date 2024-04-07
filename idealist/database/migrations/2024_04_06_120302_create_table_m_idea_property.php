@@ -13,13 +13,15 @@ class CreateTableMIdeaProperty extends Migration
      */
     public function up()
     {
+
         Schema::create('mIdeaProperty', function (Blueprint $table) {
             $table->integer('mIdeaId');
-            $table->integer('propetyId');
+            $table->integer('propertyId');
+            $table->string('name')->default(null);
             $table->string('value')->default(null);
             $table->timestamps();
 
-            $table->primary(['mIdeaId', 'propetyId']);
+            $table->primary(['mIdeaId', 'propertyId']);
         });
     }
 

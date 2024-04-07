@@ -16,6 +16,7 @@ class CreateTableMIdeaMethod extends Migration
         Schema::create('mIdeaMethod', function (Blueprint $table) {
             $table->integer('mIdeaId');
             $table->integer('methodId');
+            $table->string('name');
             $table->timestamps();
 
             $table->primary(['mIdeaId', 'methodId']);

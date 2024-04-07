@@ -6,22 +6,11 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Support\Facades\DB;
 
-class MIdeaMethod extends Model
+class MIdeaDetail extends Model
 {
     use HasFactory;
-
-    protected $table = "mIdeaMethod";
-
-    public function getDetail($id) {
-
-        $query = DB::table('mIdeaMethod AS mIM');
-        $query->select([
-            'mIM.name AS name'
-        ]);
-        $query->where('mIM.mIdeaId', $id);
-
-        return $query->get()->toArray();
-    }
+    
+    protected $table = "mIdeaDetail";
 
     public function ins($id, $detailList) {
 
@@ -33,8 +22,8 @@ class MIdeaMethod extends Model
 
             $query = DB::table($this->table);
             $query->insert([
+                'id' => $key,
                 'mIdeaId' => $id,
-                'methodId' => $key,
                 'name' => $item["name"],
                 'created_at' => now(),
                 'updated_at' => now()

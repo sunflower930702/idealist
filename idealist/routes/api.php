@@ -18,3 +18,5 @@ use App\Http\Controllers\IdeaContoller;
 
 Route::post('detail', [IdeaContoller::class, 'detail'])->name('detail');
 Route::post('list', [IdeaContoller::class, 'list'])->name('list');
+Route::post('update', [IdeaContoller::class, 'update'])->name('update');
+

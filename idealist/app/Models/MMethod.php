@@ -12,5 +12,4 @@ class MMethod extends Model
     
     protected $table = "mMethod";
 
-
 }
