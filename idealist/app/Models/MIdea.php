@@ -48,6 +48,11 @@ class MIdea extends Model
         $query->where('mIM.mIdeaId', $id);
         $result['methods'] = $query->get()->toArray();
 
+        // 対象の具体例（詳細）を取得
+        $query = DB::table('mIdeaDetail');
+        $query->where('mIdeaId', $id);
+        $result['details'] = $query->get()->toArray();
+
         // 対象が継承しているデータを取得
         $result['parent'] = $this->getParent($result['target']->extendsId);
 
