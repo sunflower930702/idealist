@@ -12,9 +12,10 @@ class MIdeaDetail extends Model
     
     protected $table = "mIdeaDetail";
 
-    public function ins($id, $detailList) {
+    public function ins($userId, $id, $detailList) {
 
         $query = DB::table($this->table);
+        $query->where('userId', $userId);
         $query->where('mIdeaId', $id);
         $query->delete();
 
@@ -22,6 +23,7 @@ class MIdeaDetail extends Model
 
             $query = DB::table($this->table);
             $query->insert([
+                'userId' => $userId,
                 'id' => $key,
                 'mIdeaId' => $id,
                 'name' => $item["name"],

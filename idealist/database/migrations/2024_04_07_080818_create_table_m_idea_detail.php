@@ -14,12 +14,13 @@ class CreateTableMIdeaDetail extends Migration
     public function up()
     {
         Schema::create('mIdeaDetail', function (Blueprint $table) {
+            $table->integer('userId');
             $table->integer('mIdeaId');
             $table->integer('id');
             $table->string('name')->default(null);
             $table->timestamps();
 
-            $table->primary(['mIdeaId', 'id']);
+            $table->primary(['userId', 'mIdeaId', 'id']);
         });
     }
 

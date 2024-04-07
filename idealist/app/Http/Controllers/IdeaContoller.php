@@ -28,6 +28,7 @@ class IdeaContoller extends Controller
 
         $json = json_decode($request->getContent(), true);
 
+        $userId = $json["query"]["userId"];
         $id = $json["query"]["id"];
         $deep = $json["query"]["deep"];
         $onlyOwn = $json["query"]["onlyOwn"];
@@ -37,7 +38,7 @@ class IdeaContoller extends Controller
         }
 
         $ideaModel = new MIdea();
-        $modelResult = $ideaModel->getDetail($id, $deep, $onlyOwn );
+        $modelResult = $ideaModel->getDetail($userId, $id, $deep, $onlyOwn );
 
         return response()->json(['dataSet' => $modelResult]);
     }
@@ -57,7 +58,7 @@ class IdeaContoller extends Controller
         ];
 
         $ideaModel = new MIdea();
-        $modelResult = $ideaModel->getList($cond);
+        $modelResult = $ideaModel->getList($json["query"]["userId"], $cond);
 
         return response()->json(['idea' => $modelResult]);
     }
@@ -79,7 +80,7 @@ class IdeaContoller extends Controller
                 return response()->json(['result' => false, 'msg' => "継承元に同じものは選択できません。"]);
             }
 
-            if ($ideaModel->checkLoop($dataSet["id"], $dataSet["extendsId"]) == false) {
+            if ($ideaModel->checkLoop($dataSet["userId"], $dataSet["id"], $dataSet["extendsId"]) == false) {
                 return response()->json(['result' => false, 'msg' => "循環が発生します。"]);
             }
 

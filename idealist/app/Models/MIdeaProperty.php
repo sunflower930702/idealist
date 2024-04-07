@@ -12,7 +12,7 @@ class MIdeaProperty extends Model
 
     protected $table = "mIdeaProperty";
 
-    public function getDetail($id) {
+    public function getDetail($userId, $id) {
 
         $query = DB::table('mIdeaProperty AS mIP');
         $query->select([
@@ -22,16 +22,19 @@ class MIdeaProperty extends Model
             'mIP.value AS value'
         ]);
         $query->leftJoin('mIdea AS mI', function($join) {
+            $join->on('mIP.userId', 'mI.userId');
             $join->on('mIP.propertyId', 'mI.id');
         });
+        $query->where('mIP.userId', $userId);
         $query->where('mIP.mIdeaId', $id);
 
         return $query->get()->toArray();
     }
 
-    public function ins($id, $detailList) {
+    public function ins($userId, $id, $detailList) {
 
         $query = DB::table($this->table);
+        $query->where('userId', $userId);
         $query->where('mIdeaId', $id);
         $query->delete();
 
@@ -39,6 +42,7 @@ class MIdeaProperty extends Model
 
             $query = DB::table($this->table);
             $query->insert([
+                'userId' => $userId,
                 'mIdeaId' => $id,
                 'propertyId' => $item["id"],
                 'name' => $item["name"],

@@ -12,20 +12,22 @@ class MIdeaMethod extends Model
 
     protected $table = "mIdeaMethod";
 
-    public function getDetail($id) {
+    public function getDetail($userId, $id) {
 
         $query = DB::table('mIdeaMethod AS mIM');
         $query->select([
             'mIM.name AS name'
         ]);
+        $query->where('mIM.userId', $userId);
         $query->where('mIM.mIdeaId', $id);
 
         return $query->get()->toArray();
     }
 
-    public function ins($id, $detailList) {
+    public function ins($userId, $id, $detailList) {
 
         $query = DB::table($this->table);
+        $query->where('userId', $userId);
         $query->where('mIdeaId', $id);
         $query->delete();
 
@@ -33,6 +35,7 @@ class MIdeaMethod extends Model
 
             $query = DB::table($this->table);
             $query->insert([
+                'userId' => $userId,
                 'mIdeaId' => $id,
                 'methodId' => $key,
                 'name' => $item["name"],

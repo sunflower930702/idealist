@@ -14,12 +14,13 @@ class CreateTableMIdeaMethod extends Migration
     public function up()
     {
         Schema::create('mIdeaMethod', function (Blueprint $table) {
+            $table->integer('userId');
             $table->integer('mIdeaId');
             $table->integer('methodId');
             $table->string('name');
             $table->timestamps();
 
-            $table->primary(['mIdeaId', 'methodId']);
+            $table->primary(['userId', 'mIdeaId', 'methodId']);
         });
     }
 

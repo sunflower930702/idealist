@@ -14,11 +14,14 @@ class CreateTableMIdea extends Migration
     public function up()
     {
         Schema::create('mIdea', function (Blueprint $table) {
-            $table->id();
+            $table->integer('userId');
+            $table->integer('id');
             $table->integer('extendsId')->nullable();
             $table->string('name')->default(null);
             $table->text('contents')->default(null);
             $table->timestamps();
+
+            $table->primary(['userId', 'id']);
         });
     }
 
